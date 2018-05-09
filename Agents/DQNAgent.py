@@ -1,6 +1,6 @@
 
-from Agents import Agent
-
+# from Agents import Agent
+from .Agent import Agent
 from keras.models import Sequential
 from keras.layers import Dense
 from keras.optimizers import Adam
@@ -38,20 +38,19 @@ class DQNAgent(Agent):
         if build_model_func is not None and callable(build_model_func):
             self.__build_model__ = build_model_func
 
-
         super().__init__(state_shape, num_action, memory_size=memory_size)
 
     def __build_model__(self):
         model = Sequential()
         model.add(Dense(24, input_dim=self.state_shape, activation='relu'))
         model.add(Dense(24, activation='relu'))
-        model.add(Dense(self.num_actions, activation='linear'))
+        model.add(Dense(self.num_action, activation='linear'))
         model.compile(loss='mse', optimizer=Adam(lr=self.learning_rate))
         return model
 
     def act(self, state):
         if np.random.rand() <= self.epsilon:
-            return random.randrange(self.action_size)
+            return random.randrange(self.num_action)
         act_values = self.model.predict(state)
         return np.argmax(act_values[0])
 
