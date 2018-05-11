@@ -1,5 +1,3 @@
-
-# from Agents import Agent
 from .Agent import Agent
 from keras.models import Sequential
 from keras.layers import Dense
@@ -55,30 +53,23 @@ class DQNAgent(Agent):
         act_values = self.model.predict(state)
         return np.argmax(act_values[0])
 
-    def replay(self, batch_size):
-        minibatch = random.sample(self.memory, batch_size)
-        for state, action, reward, next_state, done in minibatch:
-            target = reward
-            if not done:
-                target = (reward + self.gamma *
-                          np.amax(self.model.predict(next_state)[0]))
-            target_f = self.model.predict(state)
-            target_f[0][action] = target
-            self.model.fit(state, target_f, epochs=1, verbose=0)
-        if self.epsilon > self.epsilon_min:
-            self.epsilon *= self.epsilon_decay
-
     def learn(self, batch_size):
         if batch_size > len(self.memory):
             batch_size = len(self.memory)
         mini_batch = random.sample(self.memory, batch_size)
+        states = []
+        targets = []
         for state, action, reward, next_state, done in mini_batch:
             target = reward
             if not done:
                 target = (reward + self.gamma * np.amax(self.model.predict(next_state)[0]))
             target_f = self.model.predict(state)
             target_f[0][action] = target
-            self.model.fit(state, target_f, epochs=1, verbose=0)
+            states.append(state)
+            targets.append(target_f)
+        states = np.squeeze(np.array(states))
+        targets = np.squeeze(np.array(targets))
+        self.model.fit(states, targets, epochs=1, verbose=0)
         if self.epsilon > self.epsilon_min:
             self.epsilon *= self.epsilon_decay
 
