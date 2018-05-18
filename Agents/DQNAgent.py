@@ -122,7 +122,7 @@ class DQNAgentTF(Agent):
         model_action = tf.argmax(model_outputs)
         model_loss = tf.losses.mean_squared_error(self.targets, model_outputs)
         optimizer = tf.train.AdamOptimizer(self.learning_rate).minimize(model_loss)
-        self.session.run(tf.global_variables_initializer)
+        self.session.run(tf.global_variables_initializer())
         return model_action, model_outputs, optimizer
 
     def act(self, state):
