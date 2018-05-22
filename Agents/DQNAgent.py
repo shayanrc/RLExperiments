@@ -120,7 +120,7 @@ class DQNAgentTF(Agent):
         layer3_weights = tf.Variable(initial_value=tf.random_normal([24, self.num_action]))
         layer3_bias = tf.Variable(initial_value=tf.random_normal([self.num_action]))
         model_outputs = tf.nn.relu(tf.add(tf.matmul(layer2_outputs, layer3_weights), layer3_bias))
-        model_action = tf.argmax(model_outputs)
+        model_action = tf.argmax(model_outputs, axis=1)
         model_loss = tf.losses.mean_squared_error(self.targets, model_outputs)
         optimizer = tf.train.AdamOptimizer(self.learning_rate).minimize(model_loss)
         self.session.run(tf.global_variables_initializer())
@@ -134,7 +134,7 @@ class DQNAgentTF(Agent):
             return random.randrange(self.num_action)
         state = state.reshape((1,) + state.shape)
         action = self.session.run(self.model_action, feed_dict={self.inputs:state})
-        return action
+        return action[0]
 
     def learn(self, batch_size):
         if batch_size > len(self.memory):
@@ -150,9 +150,14 @@ class DQNAgentTF(Agent):
             else:
                 target_val = reward
             target = self.session.run(self.model_outputs, feed_dict={self.inputs:state})            
+            target[0][action] = target_val
             states.append(state)
             targets.append(target)
-            
+        states = np.squeeze(np.array(states))
+        targets = np.squeeze(np.array(targets))
+        self.session.run(self.optimizer, feed_dict={self.inputs:states, self.targets:targets})
+        if self.epsilon > self.epsilon_min:
+            self.epsilon *= self.epsilon_decay
 
     def remember(self, state, action, reward, next_state, done):
         """
