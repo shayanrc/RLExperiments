@@ -64,9 +64,10 @@ class DQNAgent(Agent):
         states = []
         targets = []
         for state, action, reward, next_state, done in mini_batch:
-            target = reward
             if not done:
                 target = (reward + self.gamma * np.amax(self.model.predict(next_state)[0]))
+            else:
+                target = reward
             target_f = self.model.predict(state)
             target_f[0][action] = target
             states.append(state)
@@ -126,10 +127,13 @@ class DQNAgentTF(Agent):
         return model_action, model_outputs, optimizer
 
     def act(self, state):
+        """
+        Get the model's action for the given state.
+        """
         if np.random.rand() <= self.epsilon:
             return random.randrange(self.num_action)
         state = state.reshape((1,) + state.shape)
-        action = self.session.run(self.model_action)
+        action = self.session.run(self.model_action, feed_dict={self.inputs:state})
         return action
 
     def learn(self, batch_size):
@@ -138,12 +142,22 @@ class DQNAgentTF(Agent):
         mini_batch = random.sample(self.memory, batch_size)
         states = []
         targets = []
+        next_states = []
         for state, action, reward, next_state, done in mini_batch:
-            target = reward
             if not done:
-                target = (reward + self.gamma * np.amax(self.model.predict(next_state)[0]))
+                output = self.session.run(self.model_outputs, feed_dict={self.inputs:next_state})
+                target_val = reward + self.gamma * np.amax(output[0])
+            else:
+                target_val = reward
+            target = self.session.run(self.model_outputs, feed_dict={self.inputs:state})            
+            states.append(state)
+            targets.append(target)
+            
 
     def remember(self, state, action, reward, next_state, done):
+        """
+        Save the state, action, reward, the next state and a boolean value indicating whether the episode ended here.
+        """
         state = state.reshape((1,) + state.shape)
         next_state = next_state.reshape((1,) + next_state.shape)
         super().remember(state, action, reward, next_state, done)
