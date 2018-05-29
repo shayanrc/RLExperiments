@@ -85,13 +85,13 @@ class DQNAgent(Agent):
 
 
 class DQNAgentTF(Agent):
-	"""
+    """
     Agent using Deep Q Networks, implemented using Tensorflow.
 
     """
     def __init__(self, state_shape, num_action, memory_size=1000, build_model_func=None, gamma=0.95,
                  epsilon=1.0, epsilon_min=0.01, epsilon_decay=0.995, learning_rate=0.001):
-		"""
+        """
 
         :param state_shape: Shape of the environment state given as input input
         :param num_action: number of possible actions
@@ -187,7 +187,7 @@ class DQNAgentTF(Agent):
         super().remember(state, action, reward, next_state, done)
 
     def __del__(self):
-		"""
-		Close the session, when the agent object is deleted.
-		"""
+        """
+        Close the session, when the agent object is deleted.
+        """
         self.session.close()
