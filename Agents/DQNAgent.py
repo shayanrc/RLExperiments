@@ -126,21 +126,21 @@ class DQNAgentTF(Agent):
         Function to build a tensorflow model
         :return: A tuple containing the model's predicted action, output and the optimizer used for training the model
         """
-        with tf.name_scope("Layer 1"):
+        with tf.name_scope("Layer1"):
             layer1_weights = tf.Variable(initial_value=tf.random_normal([self.state_shape, 24]))
             layer1_bias = tf.Variable(initial_value=tf.random_normal([24]))
             layer1_outputs = tf.nn.relu(tf.add(tf.matmul(self.inputs, layer1_weights), layer1_bias))
-        with tf.name_scope("Layer 2"):
+        with tf.name_scope("Layer2"):
             layer2_weights = tf.Variable(initial_value=tf.random_normal([24, 24]))
             layer2_bias = tf.Variable(initial_value=tf.random_normal([24]))
             layer2_outputs = tf.nn.relu(tf.add(tf.matmul(layer1_outputs, layer2_weights), layer2_bias))
-        with tf.name_scope("Layer 3"):
+        with tf.name_scope("Layer3"):
             layer3_weights = tf.Variable(initial_value=tf.random_normal([24, self.num_action]))
             layer3_bias = tf.Variable(initial_value=tf.random_normal([self.num_action]))
             model_outputs = tf.nn.relu(tf.add(tf.matmul(layer2_outputs, layer3_weights), layer3_bias))
 
         model_action = tf.argmax(model_outputs, axis=1, name="Action")
-        model_loss = tf.losses.mean_squared_error(self.targets, model_outputs, name="Loss")
+        model_loss = tf.losses.mean_squared_error(self.targets, model_outputs)
         optimizer = tf.train.AdamOptimizer(self.learning_rate).minimize(model_loss)
         self.session.run(tf.global_variables_initializer())
         return model_action, model_outputs, optimizer
