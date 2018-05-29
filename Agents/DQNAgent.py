@@ -85,9 +85,24 @@ class DQNAgent(Agent):
 
 
 class DQNAgentTF(Agent):
+	"""
+    Agent using Deep Q Networks, implemented using Tensorflow.
 
+    """
     def __init__(self, state_shape, num_action, memory_size=1000, build_model_func=None, gamma=0.95,
                  epsilon=1.0, epsilon_min=0.01, epsilon_decay=0.995, learning_rate=0.001):
+		"""
+
+        :param state_shape: Shape of the environment state given as input input
+        :param num_action: number of possible actions
+        :param memory_size: size of the replay memory
+        :param build_model_func: a function which returns a compiled keras model
+        :param gamma: discount factor
+        :param epsilon: exploration rate
+        :param epsilon_min: min exploration
+        :param epsilon_decay: rate of decay of the exploration rate
+        :param learning_rate: learning rate for training the model
+        """
         self.epsilon = epsilon
         self.epsilon_decay = epsilon_decay
         self.epsilon_min = epsilon_min
@@ -172,6 +187,7 @@ class DQNAgentTF(Agent):
         super().remember(state, action, reward, next_state, done)
 
     def __del__(self):
+		"""
+		Close the session, when the agent object is deleted.
+		"""
         self.session.close()
-
-
