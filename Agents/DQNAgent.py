@@ -111,6 +111,9 @@ class DQNAgentTF(Agent):
 
         self.inputs = tf.placeholder('float', shape=[None, state_shape])
         self.targets = tf.placeholder('float', shape=[None, num_action])
+        
+        self.output = tf.placeholder('float', shape=[None, num_action])
+        self.reward = tf.placeholder('float', shape=[None])
 
         self.session = tf.Session()
 
@@ -120,7 +123,16 @@ class DQNAgentTF(Agent):
         super().__init__(state_shape, num_action, memory_size=memory_size)
 
         self.model_action, self.model_outputs, self.optimizer = self.model
-
+                
+        with tf.name_scope("Target"):
+            future_reward = tf.reduce_max(self.model_outputs, name='Future_reward')
+            q_value = tf.add(self.reward, tf.scalar_mul(self.gamma, future_reward), name='q_value')
+            # Modify here
+            actions = tf.argmax(self.output, axis=1, name="Action")
+            gen_targets = tf.scatter_nd_update(self.output, actions, q_value)
+            
+        self.session.run(tf.global_variables_initializer())
+        
     def __build_model__(self):
         """
         Function to build a tensorflow model
@@ -142,7 +154,7 @@ class DQNAgentTF(Agent):
         model_action = tf.argmax(model_outputs, axis=1, name="Action")
         model_loss = tf.losses.mean_squared_error(self.targets, model_outputs)
         optimizer = tf.train.AdamOptimizer(self.learning_rate).minimize(model_loss)
-        self.session.run(tf.global_variables_initializer())
+        
         return model_action, model_outputs, optimizer
 
     def act(self, state):
@@ -160,21 +172,32 @@ class DQNAgentTF(Agent):
             batch_size = len(self.memory)
         mini_batch = random.sample(self.memory, batch_size)
         states = []
-        targets = []
         next_states = []
+        rewards = []
+        # targets = []
+        
         for state, action, reward, next_state, done in mini_batch:
-            if not done:
-                output = self.session.run(self.model_outputs, feed_dict={self.inputs:next_state})
-                target_val = reward + self.gamma * np.amax(output[0])
-            else:
-                target_val = reward
-            target = self.session.run(self.model_outputs, feed_dict={self.inputs:state})            
-            target[0][action] = target_val
+            # if not done:
+                # output = self.session.run(self.model_outputs, feed_dict={self.inputs:next_state})
+                # target_val = reward + self.gamma * np.amax(output[0])
+            # else:
+                # target_val = reward
+            # target = self.session.run(self.model_outputs, feed_dict={self.inputs:state})            
+            # target[0][action] = target_val
+            # targets.append(target)
             states.append(state)
-            targets.append(target)
+            next_states.append(next_state)
+            rewards.append(reward)
+            
         states = np.squeeze(np.array(states))
         targets = np.squeeze(np.array(targets))
+        next_states = np.squeeze(np.array(next_states))
+        
+        outputs = self.session.run(self.model_outputs, feed_dict={self.inputs:states})
+        targets = self.session.run(self.gen_targets, feed_dict={self.reward:rewards, self.outputs:outputs, self.inputs: next_states})
+        
         self.session.run(self.optimizer, feed_dict={self.inputs:states, self.targets:targets})
+        
         if self.epsilon > self.epsilon_min:
             self.epsilon *= self.epsilon_decay
 
