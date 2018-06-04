@@ -112,7 +112,7 @@ class DQNAgentTF(Agent):
         self.inputs = tf.placeholder('float', shape=[None, state_shape])
         self.targets = tf.placeholder('float', shape=[None, num_action])
         
-        self.output = tf.placeholder('float', shape=[None, num_action])
+        self.output = tf.placeholder('float', shape=[None, num_action], name='current_output')
         self.reward = tf.placeholder('float', shape=[None])
 
         self.session = tf.Session()
@@ -125,11 +125,12 @@ class DQNAgentTF(Agent):
         self.model_action, self.model_outputs, self.optimizer = self.model
                 
         with tf.name_scope("Target"):
-            future_reward = tf.reduce_max(self.model_outputs, name='Future_reward')
-            q_value = tf.add(self.reward, tf.scalar_mul(self.gamma, future_reward), name='q_value')
-            # Modify here
-            actions = tf.argmax(self.output, axis=1, name="Action")
-            gen_targets = tf.scatter_nd_update(self.output, actions, q_value)
+            future_reward = tf.reduce_max(self.model_outputs, name='FutureReward')
+            q_value = tf.add(self.reward, tf.scalar_mul(self.gamma, future_reward), name='qvalue')
+            output_var = tf.Variable(initial_value=tf.zeros([2]), dtype=tf.float32, validate_shape=False)
+            output_var.assign(self.output)
+            actions = tf.argmax(self.output, axis=1, name='last_action')
+            self.gen_targets = tf.scatter_nd_update(output_var, actions, q_value)
             
         self.session.run(tf.global_variables_initializer())
         
@@ -190,11 +191,11 @@ class DQNAgentTF(Agent):
             rewards.append(reward)
             
         states = np.squeeze(np.array(states))
-        targets = np.squeeze(np.array(targets))
+        # targets = np.squeeze(np.array(targets))
         next_states = np.squeeze(np.array(next_states))
         
         outputs = self.session.run(self.model_outputs, feed_dict={self.inputs:states})
-        targets = self.session.run(self.gen_targets, feed_dict={self.reward:rewards, self.outputs:outputs, self.inputs: next_states})
+        targets = self.session.run(self.gen_targets, feed_dict={self.reward:rewards, self.output:outputs, self.inputs: next_states})
         
         self.session.run(self.optimizer, feed_dict={self.inputs:states, self.targets:targets})
         
